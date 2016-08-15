@@ -3,7 +3,7 @@
  
  # Spécifier les options du compilateur
  CFLAGS  ?= -g -Wall 
- LDFLAGS ?= -L/usr/lib
+ LDFLAGS ?= 
  LDLIBS  ?= -lexif
  
  # Reconnaître les extensions de nom de fichier *.c et *.o comme suffixes
