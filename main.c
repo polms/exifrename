@@ -4,6 +4,12 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <dirent.h> 
+//linux only 
+#include <sys/types.h>
+#include <sys/stat.h>
+
+int isDirectory(char *path);
 
 void timeffile(struct tm *tm, char *file_name) {
 	ExifData *exif;
@@ -14,7 +20,6 @@ void timeffile(struct tm *tm, char *file_name) {
 
 	strptime((const char *)entry->data, "%Y:%m:%d %H:%M:%S", tm);
 	
-//	exif_entry_unref(entry); // libere la mémoire (unref appele free)
 	exif_data_unref(exif);
 }
 
@@ -24,10 +29,57 @@ void disptime(struct tm *tm) {
 	puts(buf);
 }
 
-int main() {
+void processFile(char *file_name) {
 	struct tm tm;
         memset(&tm, 0, sizeof(struct tm));
-	timeffile(&tm, "img/P1250942.JPG");
+	timeffile(&tm, file_name);
+	printf("\tTraitement du fichier %s\n", file_name);
 	disptime(&tm);
+}
+
+void processFolder(char *folder_name) {
+	DIR *d;
+	struct dirent *dir;
+	d = opendir(folder_name);
+	//printf("\nouverture de %s\n", folder_name);
+	if (d) {
+		while ((dir = readdir(d)) != NULL) {
+//			printf("%s\n", dir->d_name);
+			if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0) {
+				char *fn;
+				fn = (char *) malloc(strlen(folder_name) + strlen(dir->d_name) + 1);
+				fn[0] = '\0';				
+
+				strcat(fn, folder_name);
+				strcat(fn, "/");
+				strcat(fn, dir->d_name);
+
+				if (isDirectory(fn)) {
+					//printf("\n%s est un répertoire\n", fn);
+					processFolder(fn);
+				} else {
+					//printf("%s est un fichier\n", fn);
+					processFile(fn);
+				}
+				free(fn);
+			}
+		}
+		printf("fermeture de %s\n", folder_name);
+		closedir(d);
+	}
+}
+
+int isDirectory(char *path) {
+	struct stat statbuf;
+	stat(path, &statbuf);
+	return S_ISDIR(statbuf.st_mode);
+}
+
+int main() {
+	/*struct tm tm;
+        memset(&tm, 0, sizeof(struct tm));
+	timeffile(&tm, "img/P1250942.JPG");
+	disptime(&tm);*/
+	processFolder("img");
 	return EXIT_SUCCESS;
 }

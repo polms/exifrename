@@ -3,7 +3,6 @@
  
  # Spécifier les options du compilateur
  CFLAGS  ?= -g -Wall 
- LDFLAGS ?= 
  LDLIBS  ?= -lexif
  
  # Reconnaître les extensions de nom de fichier *.c et *.o comme suffixes
@@ -21,7 +20,7 @@
  # Étape de compilation et d'éditions de liens
  # ATTENTION, les lignes suivantes contenant "$(CC)" commencent par un caractère TABULATION et non pas des espaces
  $(PROG): $(OBJS)
-	$(CC) $(CFLAGS) $(LDFLAGS) $(LDLIBS) -o $(PROG) $(OBJS)
+	$(CC) $(CFLAGS) $(LDLIBS) -o $(PROG) $(OBJS)
  
  .c.o:
-	$(CC) $(CFLAGS) -c $*.c
+	$(CC) $(CFLAGS) $(LDLIBS) -c $*.c
