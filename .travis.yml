@@ -1,1 +1,6 @@
 script: make
+language: c
+addons:
+        apt:
+                packages:
+                        - libexif-dev 
