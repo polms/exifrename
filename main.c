@@ -47,7 +47,7 @@ void processFolder(char *folder_name) {
 //			printf("%s\n", dir->d_name);
 			if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0) {
 				char *fn;
-				fn = (char *) malloc(strlen(folder_name) + strlen(dir->d_name) + 1);
+				fn = (char *) malloc(strlen(folder_name) + strlen(dir->d_name) + 2);
 				fn[0] = '\0';				
 
 				strcat(fn, folder_name);
@@ -55,7 +55,7 @@ void processFolder(char *folder_name) {
 				strcat(fn, dir->d_name);
 
 				if (isDirectory(fn)) {
-					//printf("\n%s est un répertoire\n", fn);
+					printf("\n%s est un répertoire\n", fn);
 					processFolder(fn);
 				} else {
 					//printf("%s est un fichier\n", fn);
@@ -64,7 +64,7 @@ void processFolder(char *folder_name) {
 				free(fn);
 			}
 		}
-		printf("fermeture de %s\n", folder_name);
+		//printf("fermeture de %s\n", folder_name);
 		closedir(d);
 	}
 }
