@@ -39,12 +39,37 @@ void disptime(struct tm *tm) {
 	(void) puts(buf);
 }
 
+char* insereDate(char *file_name, struct tm *tm) {
+	char *pos_ptr;
+	char *buff;	
+	char date[11];
+	(void) strftime(date, 11, "%F", tm);
+	buff = malloc((strlen(file_name) + 11 + 2) * sizeof(char)); //P2011-09-02 1200859.JPG
+
+	pos_ptr = strrchr(file_name, '/');
+	if (pos_ptr == NULL) {
+        	(void) sprintf(buff, "P%s %s", date, file_name + sizeof(char));
+	} else {
+		char *trunc;
+		int pos;
+	       	pos = pos_ptr - file_name; // calcul sur pointeur
+		trunc = malloc((pos + 2) * sizeof(char));
+		strncpy(trunc, file_name, pos + 2); // pos + 2 car il faut terminer la chaine sans supprimer d'info
+		trunc[pos + 1] = '\0'; // terminer la chaine
+		(void) sprintf(buff, "%sP%s %s", trunc, date, file_name + (pos + 2) *  sizeof(char));
+	        free(trunc);	
+	}
+	return buff;
+}
+
 void processFile(char *file_name) {
 	struct tm tm;
         memset(&tm, 0, sizeof(struct tm));
 	printf("\tTraitement du fichier %s\n", file_name);
 	if (timeffile(&tm, file_name)) {
-		disptime(&tm);
+		char *date = insereDate(file_name, &tm);
+		puts(date);
+		free(date);
 	}
 }
 
