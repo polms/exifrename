@@ -4,37 +4,48 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
-#include <dirent.h> 
+#include <errno.h>
 //linux only 
+#include <dirent.h> 
 #include <sys/types.h>
 #include <sys/stat.h>
 
 int isDirectory(char *path);
 
-void timeffile(struct tm *tm, char *file_name) {
+int timeffile(struct tm *tm, char *file_name) {
+	int ret = 0;
 	ExifData *exif;
 	ExifEntry *entry;
 
 	exif = exif_data_new_from_file(file_name);
-	entry = exif_content_get_entry(exif->ifd[EXIF_IFD_EXIF], EXIF_TAG_DATE_TIME_ORIGINAL);
+	if (exif != NULL) {
+		entry = exif_content_get_entry(exif->ifd[EXIF_IFD_EXIF], EXIF_TAG_DATE_TIME_ORIGINAL);
+		if (strptime((const char *)entry->data, "%Y:%m:%d %H:%M:%S", tm) != NULL) {
+			ret = 1; // la convertion de char* vers tm a réusie
+		} else {
+			fprintf(stderr, "Erreur format date exif: %s\n", entry->data);
+		}
+	} else {
+		fprintf(stderr, "Erreur pas de données exif dans %s\n", file_name);
+	}
 
-	strptime((const char *)entry->data, "%Y:%m:%d %H:%M:%S", tm);
-	
 	exif_data_unref(exif);
+	return ret;
 }
 
 void disptime(struct tm *tm) {
 	char buf[20];
-        strftime(buf, sizeof(buf), "%d %b %Y %H:%M", tm);
-	puts(buf);
+        (void) strftime(buf, sizeof(buf), "%d %b %Y %H:%M", tm);
+	(void) puts(buf);
 }
 
 void processFile(char *file_name) {
 	struct tm tm;
         memset(&tm, 0, sizeof(struct tm));
-	timeffile(&tm, file_name);
 	printf("\tTraitement du fichier %s\n", file_name);
-	disptime(&tm);
+	if (timeffile(&tm, file_name)) {
+		disptime(&tm);
+	}
 }
 
 void processFolder(char *folder_name) {
@@ -48,14 +59,14 @@ void processFolder(char *folder_name) {
 			if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0) {
 				char *fn;
 				fn = (char *) malloc(strlen(folder_name) + strlen(dir->d_name) + 2);
-				fn[0] = '\0';				
+				*fn = '\0';				
 
 				strcat(fn, folder_name);
 				strcat(fn, "/");
 				strcat(fn, dir->d_name);
 
 				if (isDirectory(fn)) {
-					printf("\n%s est un répertoire\n", fn);
+					//printf("\n%s est un répertoire\n", fn);
 					processFolder(fn);
 				} else {
 					//printf("%s est un fichier\n", fn);
@@ -70,9 +81,14 @@ void processFolder(char *folder_name) {
 }
 
 int isDirectory(char *path) {
+	int res = -1;
 	struct stat statbuf;
-	stat(path, &statbuf);
-	return S_ISDIR(statbuf.st_mode);
+	if (stat(path, &statbuf) == -1) {
+		fprintf(stderr, "Error isDirectory(%s): %s\n", path, strerror(errno));
+	} else {
+		res = S_ISDIR(statbuf.st_mode);
+	}
+	return res;
 }
 
 int main() {
