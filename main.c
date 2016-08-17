@@ -25,11 +25,10 @@ int timeffile(struct tm *tm, char *file_name) {
 		} else {
 			fprintf(stderr, "Erreur format date exif: %s\n", entry->data);
 		}
+		exif_data_unref(exif);
 	} else {
 		fprintf(stderr, "Erreur pas de données exif dans %s\n", file_name);
 	}
-
-	exif_data_unref(exif);
 	return ret;
 }
 
@@ -44,7 +43,7 @@ char* insereDate(char *file_name, struct tm *tm) {
 	char *buff;	
 	char date[11];
 	(void) strftime(date, 11, "%F", tm);
-	buff = malloc((strlen(file_name) + 11 + 2) * sizeof(char)); //P2011-09-02 1200859.JPG
+	buff = malloc((strlen(file_name) + sizeof(date) + 2) * sizeof(char)); //P2011-09-02 1200859.JPG
 
 	pos_ptr = strrchr(file_name, '/');
 	if (pos_ptr == NULL) {
@@ -53,10 +52,10 @@ char* insereDate(char *file_name, struct tm *tm) {
 		char *trunc;
 		int pos;
 	       	pos = pos_ptr - file_name; // calcul sur pointeur
-		trunc = malloc((pos + 2) * sizeof(char));
-		strncpy(trunc, file_name, pos + 2); // pos + 2 car il faut terminer la chaine sans supprimer d'info
+		trunc = malloc((pos + 2) * sizeof(char)); // 2 : pos commance par 0 et terminer la chaine
+		(void) strncpy(trunc, file_name, pos + 2); // pos + 2 car il faut terminer la chaine sans supprimer d'info
 		trunc[pos + 1] = '\0'; // terminer la chaine
-		(void) sprintf(buff, "%sP%s %s", trunc, date, file_name + (pos + 2) *  sizeof(char));
+		(void) sprintf(buff, "%sP%s %s", trunc, date, pos_ptr + 1 * sizeof(char));
 	        free(trunc);	
 	}
 	return buff;
