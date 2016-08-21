@@ -42,10 +42,15 @@ char* insereDate(char *file_name, struct tm *tm) {
 	char *pos_ptr;
 	char *buff;	
 	char date[11];
+	pos_ptr = strrchr(file_name, '/');
+
+	if (strchr(pos_ptr, '-') != NULL) { // la photo a probablement déja été renomer
+		return NULL;
+	}
+
 	(void) strftime(date, 11, "%F", tm);
 	buff = malloc((strlen(file_name) + sizeof(date) + 2) * sizeof(char)); //P2011-09-02 1200859.JPG
 
-	pos_ptr = strrchr(file_name, '/');
 	if (pos_ptr == NULL) {
         	(void) sprintf(buff, "P%s %s", date, file_name + sizeof(char));
 	} else {
@@ -55,7 +60,7 @@ char* insereDate(char *file_name, struct tm *tm) {
 		trunc = malloc((pos + 2) * sizeof(char)); // 2 : pos commance par 0 et terminer la chaine
 		(void) strncpy(trunc, file_name, pos + 2); // pos + 2 car il faut terminer la chaine sans supprimer d'info
 		trunc[pos + 1] = '\0'; // terminer la chaine
-		(void) sprintf(buff, "%sP%s %s", trunc, date, pos_ptr + 1 * sizeof(char));
+		(void) sprintf(buff, "%sP%s %s", trunc, date, pos_ptr + 2 * sizeof(char));
 	        free(trunc);	
 	}
 	return buff;
@@ -67,7 +72,11 @@ void processFile(char *file_name) {
 	printf("\tTraitement du fichier %s\n", file_name);
 	if (timeffile(&tm, file_name)) {
 		char *date = insereDate(file_name, &tm);
-		puts(date);
+		if (date != NULL) {
+			puts(date);
+		} else {
+			printf("Le fichier a déga été renomer.\n");
+		}
 		free(date);
 	}
 }
