@@ -12,7 +12,7 @@
 
 int isDirectory(char *path);
 
-int timeffile(struct tm *tm, char *file_name) {
+int timeffile(struct tm *tm, char *file_name) { // TODO(robin): https://sourceforge.net/p/libexif/mailman/message/2898934/ 
 	int ret = 0;
 	ExifData *exif;
 	ExifEntry *entry;
