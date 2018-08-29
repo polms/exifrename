@@ -73,9 +73,9 @@ void processFile(char *file_name) {
 	if (timeffile(&tm, file_name)) {
 		char *date = insereDate(file_name, &tm);
 		if (date != NULL) {
-			puts(date);
+			rename(file_name, date);
 		} else {
-			printf("Le fichier a déga été renomer.\n");
+			printf("Le fichier a déjà été renomer.\n");
 		}
 		free(date);
 	}
@@ -124,11 +124,15 @@ int isDirectory(char *path) {
 	return res;
 }
 
-int main() {
+int main(int argc, char** argv) {
 	/*struct tm tm;
         memset(&tm, 0, sizeof(struct tm));
 	timeffile(&tm, "img/P1250942.JPG");
 	disptime(&tm);*/
-	processFolder("img");
+	if (argc != 2) {
+		printf("USAGE: %s directory\n", argv[0]);
+		return EXIT_FAILURE;
+	}
+	processFolder(argv[1]);
 	return EXIT_SUCCESS;
 }
