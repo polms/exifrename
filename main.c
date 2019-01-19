@@ -1,16 +1,18 @@
 #define _XOPEN_SOURCE
+#define _DEFAULT_SOURCE
 #include <libexif/exif-data.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
 #include <errno.h>
-//linux only 
-#include <dirent.h> 
+//linux only
+#include <dirent.h>
+#include <stdbool.h>
+#include <unistd.h>
+#include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-
-int isDirectory(char *path);
 
 int timeffile(struct tm *tm, char *file_name) { // TODO(robin): https://sourceforge.net/p/libexif/mailman/message/2898934/ 
 	int ret = 0;
@@ -69,7 +71,7 @@ char* insereDate(char *file_name, struct tm *tm) {
 void processFile(char *file_name) {
 	struct tm tm;
         memset(&tm, 0, sizeof(struct tm));
-	printf("\tTraitement du fichier %s\n", file_name);
+	printf("Traitement du fichier %s\n", file_name);
 	if (timeffile(&tm, file_name)) {
 		char *date = insereDate(file_name, &tm);
 		if (date != NULL) {
@@ -81,14 +83,12 @@ void processFile(char *file_name) {
 	}
 }
 
-void processFolder(char *folder_name) {
+void processFolder(char *folder_name, bool recursive) {
 	DIR *d;
 	struct dirent *dir;
 	d = opendir(folder_name);
-	//printf("\nouverture de %s\n", folder_name);
 	if (d) {
 		while ((dir = readdir(d)) != NULL) {
-//			printf("%s\n", dir->d_name);
 			if (strcmp(dir->d_name, ".") != 0 && strcmp(dir->d_name, "..") != 0) {
 				char *fn;
 				fn = (char *) malloc(strlen(folder_name) + strlen(dir->d_name) + 2);
@@ -98,11 +98,9 @@ void processFolder(char *folder_name) {
 				strcat(fn, "/");
 				strcat(fn, dir->d_name);
 
-				if (isDirectory(fn)) {
-					//printf("\n%s est un répertoire\n", fn);
-					processFolder(fn);
-				} else {
-					//printf("%s est un fichier\n", fn);
+				if (dir->d_type == DT_DIR && recursive) {
+					processFolder(fn, recursive);
+				} else if (dir->d_type == DT_REG) {
 					processFile(fn);
 				}
 				free(fn);
@@ -125,14 +123,28 @@ int isDirectory(char *path) {
 }
 
 int main(int argc, char** argv) {
-	/*struct tm tm;
-        memset(&tm, 0, sizeof(struct tm));
-	timeffile(&tm, "img/P1250942.JPG");
-	disptime(&tm);*/
-	if (argc != 2) {
-		printf("USAGE: %s directory\n", argv[0]);
+	bool recursive = false;
+	bool arg_parse_error = false;
+	int index;
+	int opt;
+	while ((opt = getopt(argc, argv, "r")) != -1) {
+		switch (opt) {
+		case 'r': recursive = true; break;
+		default:
+			 arg_parse_error = true;
+		}
+	}
+	if (argc == optind || arg_parse_error) {
+		fprintf(stderr, "Usage: %s [-r] [file|directory]...\n", argv[0]);
 		return EXIT_FAILURE;
 	}
-	processFolder(argv[1]);
+	for (index = optind; index < argc; index++) {
+		char* path = argv[index];
+		if (isDirectory(path)) {
+			processFolder(path, recursive);
+		} else {
+			processFile(path);
+		}
+	}
 	return EXIT_SUCCESS;
 }
