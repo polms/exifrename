@@ -24,10 +24,14 @@ int timeffile(struct tm *tm, char *file_name) { // TODO(robin): https://sourcefo
 	exif = exif_data_new_from_file(file_name);
 	if (exif != NULL) {
 		entry = exif_content_get_entry(exif->ifd[EXIF_IFD_EXIF], EXIF_TAG_DATE_TIME_ORIGINAL);
-		if (strptime((const char *)entry->data, "%Y:%m:%d %H:%M:%S", tm) != NULL) {
-			ret = 1; // la convertion de char* vers tm a réusie
+		if (entry == NULL) {
+			fprintf(stderr, "Erreur pas de EXIF_TAG_DATE_TIME_ORIGINAL dans la section EXIF_IFD_EXIF de %s\n", file_name);
 		} else {
-			fprintf(stderr, "Erreur format date exif: %s\n", entry->data);
+			if (strptime((const char *)entry->data, "%Y:%m:%d %H:%M:%S", tm) != NULL) {
+				ret = 1; // la convertion de char* vers tm a réusie
+			} else {
+				fprintf(stderr, "Erreur format date exif: %s\n", entry->data);
+			}
 		}
 		exif_data_unref(exif);
 	} else {
@@ -115,7 +119,6 @@ void processFolder(char *folder_name, bool recursive) {
 				free(fn);
 			}
 		}
-		//printf("fermeture de %s\n", folder_name);
 		closedir(d);
 	}
 }
