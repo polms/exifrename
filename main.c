@@ -14,6 +14,8 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+mode_t fileInfo(char *path);
+
 int timeffile(struct tm *tm, char *file_name) { // TODO(robin): https://sourceforge.net/p/libexif/mailman/message/2898934/ 
 	int ret = 0;
 	ExifData *exif;
@@ -98,10 +100,17 @@ void processFolder(char *folder_name, bool recursive) {
 				strcat(fn, "/");
 				strcat(fn, dir->d_name);
 
-				if (dir->d_type == DT_DIR && recursive) {
+				if (recursive && dir->d_type == DT_DIR) {
 					processFolder(fn, recursive);
 				} else if (dir->d_type == DT_REG) {
 					processFile(fn);
+				} else if (dir->d_type == DT_UNKNOWN) {
+					mode_t fi = fileInfo(fn);
+					if (recursive && S_ISDIR(fi)) {
+						processFolder(fn, recursive);
+					} else if (S_ISREG(fi)) {
+						processFile(fn);
+					}
 				}
 				free(fn);
 			}
@@ -111,15 +120,12 @@ void processFolder(char *folder_name, bool recursive) {
 	}
 }
 
-int isDirectory(char *path) {
-	int res = -1;
+mode_t fileInfo(char *path) {
 	struct stat statbuf;
 	if (stat(path, &statbuf) == -1) {
-		fprintf(stderr, "Error isDirectory(%s): %s\n", path, strerror(errno));
-	} else {
-		res = S_ISDIR(statbuf.st_mode);
+		fprintf(stderr, "Error fileInfo(%s): %s\n", path, strerror(errno));
 	}
-	return res;
+	return statbuf.st_mode;
 }
 
 int main(int argc, char** argv) {
@@ -140,9 +146,10 @@ int main(int argc, char** argv) {
 	}
 	for (index = optind; index < argc; index++) {
 		char* path = argv[index];
-		if (isDirectory(path)) {
+		mode_t fi = fileInfo(path);
+		if (S_ISDIR(fi)) {
 			processFolder(path, recursive);
-		} else {
+		} else if (S_ISREG(fi)) {
 			processFile(path);
 		}
 	}
